@@ -1,10 +1,18 @@
-FROM maven:3.6.3-jdk-8
+FROM maven:3.5.2-jdk-8-alpine AS MAVEN_BUILD
 
 LABEL maintainer=danilotiago
 
-ENV DOCKERIZE_VERSION v0.6.1
-RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+COPY pom.xml /build/
+COPY src /build/src/
+
+WORKDIR /build/
+
+RUN mvn package
+
+FROM openjdk:8-jre-alpine
+
+WORKDIR /app
+
+COPY --from=MAVEN_BUILD /build/target/myapp-0.0.1.jar /app/
 
 ENTRYPOINT ["java", "-jar", "myapp-0.0.1.jar"]
